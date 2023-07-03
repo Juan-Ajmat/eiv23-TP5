@@ -1,11 +1,10 @@
 #include <stdint.h>
-#include <UART.h>
-#include <stm32f1xx.h>
+#include "UART.h"
+#include "stm32f1xx.h"
+#include <stdbool.h>
+
 
 #define BAUDRATE 9600
-
-
-
 
 void USART_init (void) {
  
@@ -15,42 +14,38 @@ void USART_init (void) {
     RCC->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_USART1EN;          //Activa el clock tanto del puerto A como del USART1
     GPIOA->CRH = (GPIOA->CRH & ~(0xF << GPIO_CRH_MODE9_Pos)) | PA9_SALIDA_50MHZ_Msk;      //Configura el pin 9 como un pin de salida rapida
     GPIOA->CRH = (GPIOA->CRH & ~(0xF << GPIO_CRH_MODE10_Pos)) | PA10_ENTRADA_FLOTANTE_Msk;//Configura el pin 10 como entrada flotante
-                                                  //Reseteo el USART (Por defecto 8N1)
-    USART1->BRR = (SystemCoreClock )/ BAUDRATE;            //Establece el valor del baudrate en el puerto comunicador serie 
+    USART1->BRR = (SystemCoreClock )/ BAUDRATE;                         //Establece el valor del baudrate en el puerto comunicador serie 
     USART1->CR1 |= USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;          //Habilito el USART1 (CR1->UE = 1), el transmisor (CR1->TE = 1) y el receptor (CR1->RE = 1)                                       
 }
 
-
- 
-bool USART_read (uint32_t *palabra) {
-    bool lectura_exitosa=0;
-    if(USART1->SR & USART_SR_RXNE_Msk) {                        //Cuando llega un caracter lo coloca en el DR, y se pone en 1 el RXNE
-        *palabra = USART1->DR;                                  //La palabra leida toma el valor de DR
-        lectura_exitosa=1;                                              
+bool USART_lectura (uint32_t *palabra) {
+    if(USART1->SR & USART_SR_RXNE) {                        //Cuando llega un caracter lo coloca en el DR, y se pone en 1 el RXNE
+        *palabra = USART1->DR;                                  //La palabra leida toma el valor de DR                                              
+        return 1;
     }
-    return lectura_exitosa;                                           
+    return 0;                                           
 }
 
-bool USART_write_byte (uint8_t c) {
-    bool const buffer_disponible = (USART1->SR & USART_SR_TXE);  //1 buffer disponible, 0 buffer lleno
-    bool escritura_exitosa = 0;
-    if (buffer_disponible) {
-        USART1->DR = c;                                                         //Escribo un caracter
-        escritura_exitosa = 1;
+
+
+bool USART_escritura (uint8_t c) {
+    if (USART1->SR & USART_SR_TXE) {
+        USART1->DR = c;                                          //Escribo un caracter
+        return 1;
     }
-    return escritura_exitosa;                   
+    return 0;              
                                               
 }
-void esperarYTransmitir(char c){
-    bool transmision = 0;
-    while (!transmision) {
-        transmision = USART_write_byte (c);
-    };
+
+void transmitirConRetardo(char c){
+    while (!USART_escritura(c)) {
+    }
 }
 
 
 void USART_deInit () {
-    while(~(USART1->SR & (USART_SR_TC_Msk)));                  //Espero a que TC = 1 en SR para asegurarse que finalizo la transmision
-    USART_reset();                                             //Reinicio el USART
-    RCC->APB2ENR &= ~(RCC_APB2ENR_USART1EN);                   //Desconecto el clock del USART
-}
+    while(!(USART1->SR & (USART_SR_TC))){
+    }
+    USART1->CR1 = 0;   
+    RCC->APB2ENR &= ~(RCC_APB2ENR_USART1EN);
+    }

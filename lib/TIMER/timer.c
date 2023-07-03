@@ -6,8 +6,6 @@
 #define PREESCALER 46UL  
 uint32_t valor_detectado;
 
-
-
 typedef enum TIM_MODO{
     MODO_FROZEN            ,
     MODO_HIGH_ON_MATCH   ,
@@ -19,19 +17,14 @@ typedef enum TIM_MODO{
     MODO_PWM_2             
 }TIM_MODO;
 
-void TIM4_init (){
-    RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;     //Habilito el clock del timer 4  
-    TIM4_reset(); 
-    TIM4->PSC = PREESCALER;                 //Configuro el tiempo del prescaler
-    TIM4->CR1 |= TIM_CR1_CEN;               //Habilito el contador
-    TIM4_setOC1M(MODO_CERO);
-    TIM4_CH2_config();                    
-    TIM4->CCER |= TIM_CCER_CC1E;            //Habilito modo Capture/Compare en el canal 1 del timer 4
-    TIM4->CCER |= TIM_CCER_CC2E;            //Habilito modo Capture/Compare en el canal 2 del timer 4                         
-    pinConfig ();
-    TIM4->DIER |= TIM_DIER_CC2IE;
-    __NVIC_EnableIRQ(TIM4_IRQn);
-}
+
+static void TIM4_resetCounterAndUpdate(void);
+static void TIM4_reset ();
+static void TIM4_setOC1M(TIM_MODO modo);
+static void pinConfig (void);
+static void TIM4_setCCR1(uint16_t valor);
+static void TIM4_resetCounterAndUpdate(void);
+static void TIM4_CC2S_config (void);
 
 static void TIM4_reset () {
     RCC->APB1RSTR = RCC_APB1RSTR_TIM4RST;
@@ -58,16 +51,6 @@ void TIM4_pulso (uint32_t ciclos){
     TIM4_setOC1M(MODO_LOW_ON_MATCH);
 }
 
-static void SetFlanco (const flanco flanco) {
-    if (flanco == DESCENDENTE) {         
-        TIM4->CCER |= TIM_CCER_CC2P;
-    }
-    else {
-        TIM4->CCER &= ~(TIM_CCER_CC2P);
-    }  
-    TIM4->SR &= ~TIM_SR_CC2IF;
-}
-
 void TIM4_IRQHandler (void) {
     if ((TIM4->SR & TIM_SR_CC2IF))
     {
@@ -88,6 +71,19 @@ void TIM4_deInit (){
     RCC->APB1ENR &= ~(RCC_APB1ENR_TIM4EN);  //Deshabilito el clock del Timer 2
 }
 
+void TIM4_init (){
+    RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;     //Habilito el clock del timer 4  
+    TIM4_deInit(); 
+    TIM4->PSC = PREESCALER;                 //Configuro el tiempo del prescaler
+    TIM4->CR1 |= TIM_CR1_CEN;               //Habilito el contador
+    TIM4_setOC1M(MODO_CERO);
+    TIM4_CC2S_config();                    
+    TIM4->CCER |= TIM_CCER_CC1E;            //Habilito modo Capture/Compare en el canal 1 del timer 4
+    TIM4->CCER |= TIM_CCER_CC2E;            //Habilito modo Capture/Compare en el canal 2 del timer 4                         
+    pinConfig ();
+    TIM4->DIER |= TIM_DIER_CC2IE;
+    __NVIC_EnableIRQ(TIM4_IRQn);
+}
 
 /*Una rutina que inicia el timer puede iniciar los canales y dejarlos en un estado conocido. 
 El trigger queda en comparacionpero con forzadoa a 0. Para dispara forzar a 1 
