@@ -1,19 +1,21 @@
 #ifndef TIMER_H
 #define TIMER_H
 #include <stdint.h>
+#include "soporte_placa.h"
 
+typedef enum{
+    ASCENDENTE,
+    DESCENDENTE
+}flanco;
 
 /**
  * @brief Inicializa el Timer 4...
  */
-void TIM4_init(void);
+void TIM4_init();
 
-/**
- * @brief Captura el tiempo desde que hay un cambio y devuelve la distancia 
- * @param time
- */
-uint32_t capture_time(void); 
+void TIM4_pulso (uint32_t ciclos);
 
-uint32_t compare(uint32_t);
+void TIM4_IRQHandler (void);
 
+void TIM4_deInit ();
 #endif
