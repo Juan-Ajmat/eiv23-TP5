@@ -18,4 +18,6 @@ void TIM4_pulso(uint32_t ciclos);
 void TIM4_deInit(void);
 
 void TIM4_setOC1M(int modo);
+
+uint32_t MedirDistancia(void);
 #endif

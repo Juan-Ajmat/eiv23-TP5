@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "stdbool.h": "c",
-        "timer.h": "c"
+        "timer.h": "c",
+        "soporte_placa.h": "c"
     }
 }

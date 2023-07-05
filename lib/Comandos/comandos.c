@@ -2,74 +2,20 @@
 #include <UART.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <stdio.h>
 
+//static const char* const comando = "dist?";
 
-static const char* const comando = "dist?";
+//static const char* const mensaje_error = "ERR";
 
-static const char* const mensaje_error = "ERR";
+void mensajeError(void);
+void mostrarDistancia (uint32_t ancho_de_pulso);
 
-typedef struct {
-    enum Estado { ESPERA, COINCIDIENDO, ERR } estado;
-    unsigned coincidencias;
-} Interprete;
-
-static Interprete interprete;
-
-static void transmitirMensajeDeError(void) {
-    for (unsigned i = 0; mensaje_error[i] != '\0'; i++) {
-        esperarYTransmitir(mensaje_error[i]);
-    }
+void mensajeError(void){
+    printf("Objeto fuera de Rango!!\n");
 }
 
-void Interprete_init(void) {
-    interprete.coincidencias = 0;
-    interprete.estado = ESPERA;
-}
 
-static bool coincideChar(char c) {
-    unsigned i = interprete.coincidencias;
-    if (comando[i] != '\0') {
-        if (tolower(c) == comando[i]) {
-            interprete.coincidencias++;
-            return true;
-        }
-    } else {
-        if (c == ' ' || c == '\n' || c == '\r') {
-            return true;
-        }
-    }
-    return false;
-}
-
-void Interprete_procesa(char c) {
-    switch (interprete.estado) {
-        case ESPERA:
-            interprete.coincidencias = 0;
-            if (c == ' ' || c == '\n' || c == '\r') {
-                interprete.estado = ESPERA;
-            } else if (coincideChar(c)) {
-                interprete.estado = COINCIDIENDO;
-            } else {
-                interprete.estado = ERR;
-            }
-            break;
-
-        case COINCIDIENDO:
-            if (coincideChar(c)) {
-                if (c == '\n') {
-                    Comando_dist();
-                    interprete.estado = ESPERA;
-                }
-            } else {
-                interprete.estado = ERR;
-            }
-            break;
-
-        case ERR:
-            if (c == '\n') {
-                transmitirMensajeDeError();
-                interprete.estado = ESPERA;
-            }
-            break;
-    }
+void mostrarDistancia (uint32_t ancho_de_pulso){
+    printf("El objeto se encuentra a %li \n",ancho_de_pulso);
 }

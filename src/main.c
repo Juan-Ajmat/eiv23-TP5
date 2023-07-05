@@ -4,7 +4,10 @@
 #include <soporte_placa.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
+
 uint32_t buffer;
+uint32_t valor_distancia;
 
 int main(){
     
@@ -14,7 +17,11 @@ int main(){
         bool read = USART_lectura(&buffer);
         if(read) {
             transmitirConRetardo(buffer);
-            TIM4_pulso(2);
+            valor_distancia= MedirDistancia();
+            //USART_convertirACaracter(valor_distancia);
+            
         }
     }
 }
+
+

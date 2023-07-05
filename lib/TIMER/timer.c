@@ -2,6 +2,9 @@
 #include <stdint.h>
 #include <stm32f1xx.h>
 #include "soporte_placa.h"
+#include <comandos.h>
+#include <UART.h>
+#include <stdio.h>
 
 #define PREESCALER 46UL  
 uint32_t volatile valor_detectado;
@@ -18,6 +21,7 @@ typedef enum TIM_MODO{
 }TIM_MODO;
 
 
+
 static void TIM4_resetCounterAndUpdate(void);
 static void TIM4_reset ();
 //static void TIM4_setOC1M(TIM_MODO modo);
@@ -25,6 +29,10 @@ static void pinConfig (void);
 static void TIM4_setCCR1(uint16_t valor);
 static void TIM4_resetCounterAndUpdate(void);
 static void TIM4_CC2S_config (void);
+uint32_t DetectarValor(flanco tipoFlanco);
+static void DetectarFlanco (flanco tipoFlanco);
+uint32_t MedirDistancia(void);
+
 
 static void TIM4_reset() {
     RCC->APB1RSTR = RCC_APB1RSTR_TIM4RST;
@@ -50,19 +58,25 @@ void TIM4_pulso (uint32_t ciclos){
     TIM4_setCCR1(TIM4->CNT + ciclos);
     TIM4_setOC1M(MODO_LOW_ON_MATCH);
 }
+static void DetectarFlanco (flanco tipoFlanco) {
+    if (tipoFlanco == DESCENDENTE) {         
+        TIM4->CCER |= TIM_CCER_CC2P;                                    
+    }
+    else{
+        TIM4->CCER &= ~(TIM_CCER_CC2P);
+    }
+    TIM4->SR &= ~TIM_SR_CC2IF;
+}
 
 
+uint32_t DetectarValor(flanco tipoFlanco){
+    DetectarFlanco(tipoFlanco);
+    while(!(TIM4->SR & TIM_SR_CC2IF)){
+    }
+    valor_detectado= TIM4->CCR2;
+    return valor_detectado;
+}
 
-
-// void TIM4_IRQHandler(void);
-
-// void TIM4_IRQHandler(void) {
-//     if ((TIM4->SR & TIM_SR_CC2IF))
-//     {
-//         valor_detectado = TIM4->CCR2;
-//     }
-
-// }
 
 static void TIM4_setCCR1(uint16_t valor){
     TIM4->CCR1 = valor;
@@ -87,10 +101,18 @@ void TIM4_init (){
     TIM4->CCER |= TIM_CCER_CC1E;            //Habilito modo Capture/Compare en el canal 1 del timer 4
     TIM4->CCER |= TIM_CCER_CC2E;            //Habilito modo Capture/Compare en el canal 2 del timer 4                         
     pinConfig ();
-    TIM4->DIER |= TIM_DIER_CC2IE;
-    __NVIC_EnableIRQ(TIM4_IRQn);
 }
 
+/* ORIGINAL
+uint32_t MedirDistancia(void){
+    TIM4_pulso(2);
+    uint32_t valor_1 = DetectarValor (ASCENDENTE);
+    uint32_t valor_2 = DetectarValor (DESCENDENTE);
+    uint32_t ancho_de_pulso = (valor_2-valor_1);
+    return ancho_de_pulso;
+    
+}
+*/
 /*Una rutina que inicia el timer puede iniciar los canales y dejarlos en un estado conocido. 
 El trigger queda en comparacionpero con forzadoa a 0. Para dispara forzar a 1 
 reiniciar contador y preescaler
@@ -105,3 +127,17 @@ lazo de espera/bloqueo
 
 
 */
+/*ayuda nolosex*/
+
+uint32_t MedirDistancia(void) {
+    TIM4_pulso(2);
+    uint32_t valor_1 = DetectarValor(ASCENDENTE);
+    uint32_t valor_2 = DetectarValor(DESCENDENTE);
+    uint32_t ancho_de_pulso = valor_2 - valor_1;
+    
+    USART_SendString("ncho de pulso: ");
+    USART_SendNumber(ancho_de_pulso);
+    USART_SendChar('\n');
+    
+    return ancho_de_pulso;
+}
