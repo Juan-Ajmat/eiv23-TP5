@@ -31,7 +31,7 @@ static void TIM4_resetCounterAndUpdate(void);
 static void TIM4_CC2S_config (void);
 uint32_t DetectarValor(flanco tipoFlanco);
 static void DetectarFlanco (flanco tipoFlanco);
-uint32_t MedirDistancia(void);
+void MedirDistancia(void);
 
 
 static void TIM4_reset() {
@@ -103,16 +103,7 @@ void TIM4_init (){
     pinConfig ();
 }
 
-/* ORIGINAL
-uint32_t MedirDistancia(void){
-    TIM4_pulso(2);
-    uint32_t valor_1 = DetectarValor (ASCENDENTE);
-    uint32_t valor_2 = DetectarValor (DESCENDENTE);
-    uint32_t ancho_de_pulso = (valor_2-valor_1);
-    return ancho_de_pulso;
-    
-}
-*/
+
 /*Una rutina que inicia el timer puede iniciar los canales y dejarlos en un estado conocido. 
 El trigger queda en comparacionpero con forzadoa a 0. Para dispara forzar a 1 
 reiniciar contador y preescaler
@@ -129,15 +120,17 @@ lazo de espera/bloqueo
 */
 /*ayuda nolosex*/
 
-uint32_t MedirDistancia(void) {
+void MedirDistancia(void) {
     TIM4_pulso(2);
     uint32_t valor_1 = DetectarValor(ASCENDENTE);
     uint32_t valor_2 = DetectarValor(DESCENDENTE);
     uint32_t ancho_de_pulso = valor_2 - valor_1;
+    if(ancho_de_pulso>4000){
+        USART_SendString("Fuera de rango.");
+        USART_SendChar('\n');    
+    }else{
+        USART_SendString("Distancia en milimetros: ");
+        USART_SendNumber(ancho_de_pulso);
+        USART_SendChar('\n');}
     
-    USART_SendString("ncho de pulso: ");
-    USART_SendNumber(ancho_de_pulso);
-    USART_SendChar('\n');
-    
-    return ancho_de_pulso;
 }

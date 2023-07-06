@@ -26,50 +26,6 @@ bool USART_lectura (uint32_t *palabra) {
     return 0;                                           
 }
 
-/*
-uint32_t toString(int numero, char * char_n,uint32_t size ){
-    int max=0;
-    uint32_t temp;
-    if (numero ==0) {
-        char_n[0] = '0';
-        char_n[1] = '\0';
-        return 0;
-    }
-    for(uint32_t i = 0 ; i<=size ; i++){
-        if (numero == 0) {
-            max = i - 1;
-            break;
-        }
-        char_n[i] = (char) (numero % 10 + 48);
-        numero = numero/10;
-    }
-    for (int i = 0; i<=max/2 ;i++){
-        temp = char_n[i];
-        char_n[i] = char_n[max - i];
-        char_n[max-i] = temp;
-    }
-    char_n[max + 1]='\0';    
-    return max;
-}
-
-void USART_convertirACaracter(uint32_t numero){
-    char numero_string[10];
-    toString(numero,numero_string,10);
-    USART_mostrarCaracter(numero_string);
-}
-
-void USART_mostrarCaracter(char * string){
-    int i = 0;
-    while (string[i]!='\0'){
-        USART_escritura(string[i]);
-        i++;
-    }
-}*/
-
-
-
-
-
 
 bool USART_escritura (uint8_t c) {
     if (USART1->SR & USART_SR_TXE) {
